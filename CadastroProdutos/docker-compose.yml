@@ -1,0 +1,10 @@
+﻿services:
+  asp-net-api-pg:
+    container_name: asp_net_db
+    image: bitnami/postgresql:latest
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: asp_net_db
+    ports:
+      - 5432:5432
