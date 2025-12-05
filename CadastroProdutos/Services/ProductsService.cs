@@ -1,23 +1,47 @@
-﻿using CadastroProdutos.Models;
+﻿using CadastroProdutos.Database;
+using CadastroProdutos.Models;
 
 namespace CadastroProdutos.Services
 {
     public class ProductsService : IProductsService
     {
-        private static List<Product> products = new List<Product>()
+        private ApplicationDbContext db;
+
+        public ProductsService(ApplicationDbContext dbContext)
         {
-            new Product() { Id = 1, Name = "Notebook", Price = 3500.00M, Stock = 10 },
-            new Product() { Id = 2, Name = "Smartphone", Price = 2000.00M, Stock = 25 },
-        };
+            this.db = dbContext;
+        }
+
+        public void Add(Product newProduct)
+        {
+            ValidateProducts(newProduct);
+            db.Products.Add(newProduct);
+            db.SaveChanges();
+        }
+
+        public bool Delete(int id)
+        {
+            var product = db.Products.FirstOrDefault(p => p.Id == id);
+
+            if (product is null)
+            {
+                return false;
+            }
+
+            db.Products.Remove(product);
+            db.SaveChanges();
+
+            return true;
+        }
 
         public List<Product> GetAll()
         {
-            return products;
+            return db.Products.ToList();
         }
 
         public Product GetById(int id)
         {
-            var product = products.FirstOrDefault(p => p.Id == id);
+            var product = db.Products.FirstOrDefault(p => p.Id == id);
 
             if (product is null)
             {
@@ -27,14 +51,11 @@ namespace CadastroProdutos.Services
             return product;
         }
 
-        public void Add(Product newProduct)
-        {
-            products.Add(newProduct);
-        }
-
         public Product Update(int id, Product updatedProduct)
         {
-            var product = products.FirstOrDefault(p => p.Id == id);
+            ValidateProducts(updatedProduct);
+            var product = db.Products.FirstOrDefault(p => p.Id == id);
+
             if (product is null)
             {
                 return null;
@@ -44,18 +65,22 @@ namespace CadastroProdutos.Services
             product.Price = updatedProduct.Price;
             product.Stock = updatedProduct.Stock;
 
+            db.SaveChanges();
+
             return product;
         }
 
-        public bool Delete(int id)
+        private void ValidateProducts(Product product)
         {
-            var product = products.FirstOrDefault(p => p.Id == id);
-            if (product is null)
+            if (product.Name == "Default Product")
             {
-                return false;
+                throw new Exception("Product name cannot be 'Default Product'");
             }
-            products.Remove(product);
-            return true;
+
+            if (product.Stock > 1000)
+            {
+                throw new Exception("Product stock cannot exceed 1000 units");
+            }
         }
     }
 }

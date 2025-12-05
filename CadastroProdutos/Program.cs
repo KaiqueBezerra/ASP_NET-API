@@ -33,11 +33,16 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 //builder.Services.AddScoped<IProductsService, ProductsService>();
-builder.Services.AddScoped<IProductsService, ProductsDatabaseService>();
+builder.Services.AddScoped<IProductsService, ProductsService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
+
+DotNetEnv.Env.Load();
+
+var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(connectionString);
 });
 
 var jwtConfig = builder.Configuration.GetSection("Jwt");

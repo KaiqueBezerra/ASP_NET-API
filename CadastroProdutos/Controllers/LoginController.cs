@@ -1,4 +1,5 @@
 ﻿using CadastroProdutos.Models;
+using CadastroProdutos.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,33 +12,30 @@ namespace CadastroProdutos.Controllers
     [Route("api/[controller]")]
     public class LoginController : Controller
     {
-        private IConfiguration configuration;
+        private readonly IConfiguration configuration;
+        private readonly IUsersService usersService;
 
-        public LoginController(IConfiguration config)
+        public LoginController(IConfiguration config, IUsersService usersService)
         {
             this.configuration = config;
+            this.usersService = usersService;
         }
 
         [HttpPost]
         public ActionResult Login(Login login)
         {
-            string role;
-            // Validate users
+            // Buscar usuário no banco
+            var user = usersService.GetByUsername(login.Username);
 
-            if (login.Username == "admin" && login.Password == "1234")
+            if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.Password))
             {
-                role = "admin";
-            }
-            else if (login.Username == "user" && login.Password == "1234")
-            {
-                role = "user";
-            }
-            else
-            {
-                return Unauthorized();
+                return Unauthorized("Invalid username or password!");
             }
 
-            // create JWT token
+            // Definir role dinamicamente (opcional)
+            string role = user.Role.ToString() == "admin" ? "admin" : "user";
+
+            // Criar Token JWT
             var jwtConfig = configuration.GetSection("Jwt");
             var key = Encoding.ASCII.GetBytes(jwtConfig["Key"]);
 
@@ -46,13 +44,16 @@ namespace CadastroProdutos.Controllers
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim("username", login.Username),
+                    new Claim("username", user.Username),
                     new Claim(ClaimTypes.Role, role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(1),
                 Issuer = jwtConfig["Issuer"],
                 Audience = jwtConfig["Audience"],
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature
+                )
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
