@@ -4,10 +4,10 @@ namespace CadastroProdutos.Services
 {
     public interface IProductsService
     {
-        public List<Product> GetAll();
-        public Product GetById(int id);
-        public void Add(Product newProduct);
-        public Product Update(int id, Product updatedProduct);
-        public bool Delete(int id);
+        public Task<List<Product>> GetAll();
+        public Task<Product> GetById(int id);
+        public Task Add(Product newProduct);
+        public Task<Product> Update(int id, Product updatedProduct);
+        public Task<bool> Delete(int id);
     }
 }

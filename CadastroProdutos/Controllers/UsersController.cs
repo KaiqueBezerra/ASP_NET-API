@@ -20,32 +20,55 @@ namespace CadastroProdutos.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public ActionResult<List<UserResponseDto>> Get()
+        public async Task<ActionResult<List<UserResponseDto>>> Get()
         {
-            return Ok(usersService.GetAll());
+            try
+            {
+                var users = await usersService.GetAll();
+
+                return Ok(users);
+            }
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
         }
 
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public ActionResult<UserResponseDto> GetById(int id)
+        public async Task<ActionResult<UserResponseDto>> GetById(int id)
         {
-            var user = usersService.GetById(id);
-            if (user == null)
+            try
             {
-                return NotFound($"user with ID {id} not found!");
+                var user = await usersService.GetById(id);
+                if (user == null)
+                {
+                    return NotFound($"user with ID {id} not found!");
+                }
+                return Ok(user);
             }
-            return Ok(user);
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
         }
 
         [AllowAnonymous]
         //[Authorize(Roles = "admin")]
         [HttpPost]
-        public ActionResult Post(User newUser)
+        public async Task<ActionResult> Post(CreateUserDto dto)
         {
             try
             {
-                usersService.Add(newUser);
+                var newUser = new User
+                {
+                    Username = dto.Username,
+                    Email = dto.Email,
+                    Password = dto.Password,
+                    Role = (User.UserRole)dto.Role
+                };
 
+                await usersService.Add(newUser);
                 return Created();
             }
             catch (Exception exception)
@@ -56,11 +79,11 @@ namespace CadastroProdutos.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
-        public ActionResult<UserResponseDto> Put(int id, UpdateUserDto updatedUser)
+        public async Task<ActionResult<UserResponseDto>> Put(int id, UpdateUserDto updatedUser)
         {
             try
             {
-                var user = usersService.Update(id, updatedUser);
+                var user = await usersService.Update(id, updatedUser);
 
                 if (user is null)
                 {
@@ -78,14 +101,21 @@ namespace CadastroProdutos.Controllers
         //[AllowAnonymous]
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var deleted = usersService.Delete(id);
-            if (deleted is false)
+            try
             {
-                return NotFound($"Product with ID {id} not found!");
+                bool deleted = await usersService.Delete(id);
+                if (deleted is false)
+                {
+                    return NotFound($"Product with ID {id} not found!");
+                }
+                return NoContent();
             }
-            return Ok($"Product with ID {id} successfully deleted!");
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
         }
 
     }

@@ -1,5 +1,7 @@
 ﻿using CadastroProdutos.Database;
+using CadastroProdutos.DTOs.Products;
 using CadastroProdutos.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CadastroProdutos.Services
 {
@@ -12,16 +14,16 @@ namespace CadastroProdutos.Services
             this.db = dbContext;
         }
 
-        public void Add(Product newProduct)
+        public async Task Add(Product newProduct)
         {
             ValidateProducts(newProduct);
-            db.Products.Add(newProduct);
-            db.SaveChanges();
+            await db.Products.AddAsync(newProduct);
+            await db.SaveChangesAsync();
         }
 
-        public bool Delete(int id)
+        public async Task<bool> Delete(int id)
         {
-            var product = db.Products.FirstOrDefault(p => p.Id == id);
+            var product = await db.Products.FindAsync(id);
 
             if (product is null)
             {
@@ -29,19 +31,19 @@ namespace CadastroProdutos.Services
             }
 
             db.Products.Remove(product);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
 
             return true;
         }
 
-        public List<Product> GetAll()
+        public async Task<List<Product>> GetAll()
         {
-            return db.Products.ToList();
+            return await db.Products.ToListAsync();
         }
 
-        public Product GetById(int id)
+        public async Task<Product> GetById(int id)
         {
-            var product = db.Products.FirstOrDefault(p => p.Id == id);
+            var product = await db.Products.FindAsync(id);
 
             if (product is null)
             {
@@ -51,10 +53,10 @@ namespace CadastroProdutos.Services
             return product;
         }
 
-        public Product Update(int id, Product updatedProduct)
+        public async Task<Product> Update(int id, Product updatedProduct)
         {
             ValidateProducts(updatedProduct);
-            var product = db.Products.FirstOrDefault(p => p.Id == id);
+            var product = await db.Products.FindAsync(id);
 
             if (product is null)
             {
@@ -65,7 +67,8 @@ namespace CadastroProdutos.Services
             product.Price = updatedProduct.Price;
             product.Stock = updatedProduct.Stock;
 
-            db.SaveChanges();
+            db.Products.Update(product);
+            await db.SaveChangesAsync();
 
             return product;
         }

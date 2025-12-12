@@ -22,14 +22,14 @@ namespace CadastroProdutos.Controllers
         }
 
         [HttpPost]
-        public ActionResult Login(Login login)
+        public async Task<ActionResult> Login(Login login)
         {
             // Buscar usuário no banco
-            var user = usersService.GetByUsername(login.Username);
+            var user = await usersService.GetByEmail(login.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.Password))
             {
-                return Unauthorized("Invalid username or password!");
+                return Unauthorized("Invalid email or password!");
             }
 
             // Definir role dinamicamente (opcional)
@@ -44,7 +44,7 @@ namespace CadastroProdutos.Controllers
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim("username", user.Username),
+                    new Claim("email", user.Email),
                     new Claim(ClaimTypes.Role, role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(1),

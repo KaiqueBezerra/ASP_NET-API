@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using CadastroProdutos.Models;
+using CadastroProdutos.DTOs.Products;
 
 namespace CadastroProdutos.Controllers
 {
@@ -19,32 +20,53 @@ namespace CadastroProdutos.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public ActionResult<List<Product>> Get()
+        public async Task<ActionResult<List<Product>>> Get()
         {
-            return Ok(productsService.GetAll());
+            try
+            {
+                return Ok(await productsService.GetAll());
+            }
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
         }
 
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public ActionResult<Product> GetById(int id)
+        public async Task<ActionResult<Product>> GetById(int id)
         {
-            var product = productsService.GetById(id);
-            if (product == null)
+            try
             {
-                return NotFound($"Product with ID {id} not found!");
+                var product = await productsService.GetById(id);
+                if (product == null)
+                {
+                    return NotFound($"Product with ID {id} not found!");
+                }
+                return Ok(product);
             }
-            return Ok(product);
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
         }
 
         [Authorize(Roles = "admin")]
         [HttpPost]
-        public ActionResult Post(Product newProduct)
+        public async Task<ActionResult> Post(CreateProductDto dto)
         {
             try
             {
-                productsService.Add(newProduct);
+                var newProduct = new Product
+                {
+                    Name = dto.Name,
+                    Price = dto.Price,
+                    Stock = dto.Stock
+                };
 
-                return Created($"/produtos/{newProduct.Id}", newProduct);
+                await productsService.Add(newProduct);
+
+                return CreatedAtAction(nameof(GetById), new { id = newProduct.Id }, newProduct);
             }
             catch (Exception exception)
             {
@@ -54,11 +76,18 @@ namespace CadastroProdutos.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
-        public ActionResult<Product> Put(int id, Product updatedProduct)
+        public async Task<ActionResult<Product>> Put(int id, UpdateProductDto dto)
         {
             try
             {
-                var product = productsService.Update(id, updatedProduct);
+                var updatedProduct = new Product
+                {
+                    Name = dto.Name,
+                    Price = dto.Price,
+                    Stock = dto.Stock
+                };
+
+                var product = await productsService.Update(id, updatedProduct);
 
                 if (product is null)
                 {
@@ -75,14 +104,21 @@ namespace CadastroProdutos.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            var deleted = productsService.Delete(id);
-            if (deleted is false)
+            try
             {
-                return NotFound($"Product with ID {id} not found!");
+                var deleted = await productsService.Delete(id);
+                if (deleted is false)
+                {
+                    return NotFound($"Product with ID {id} not found!");
+                }
+                return NoContent();
             }
-            return Ok($"Product with ID {id} successfully deleted!");
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
         }
 
     }

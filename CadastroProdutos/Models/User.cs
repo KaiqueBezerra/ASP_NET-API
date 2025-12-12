@@ -10,15 +10,9 @@ namespace CadastroProdutos.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-
-        [Required]
-        [MinLength(2, ErrorMessage = "The name must have at least 2 characters.")]
         public string Username { get; set; }
-
-        [Required]
+        public string Email { get; set; }
         public string Password { get; set; }
-
-        [Required]
         public UserRole Role { get; set; }
     }
 }

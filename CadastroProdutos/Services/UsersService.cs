@@ -1,6 +1,7 @@
 ﻿using CadastroProdutos.Database;
 using CadastroProdutos.DTOs.Users;
 using CadastroProdutos.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CadastroProdutos.Services
 {
@@ -13,16 +14,17 @@ namespace CadastroProdutos.Services
             this.db = dbContext;
         }
 
-        public void Add(User newUser)
+        public async Task Add(User newUser)
         {
             newUser.Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password);
-            db.Users.Add(newUser);
-            db.SaveChanges();
+
+            await db.Users.AddAsync(newUser);
+            await db.SaveChangesAsync();
         }
 
-        public bool Delete(int id)
+        public async Task<bool> Delete(int id)
         {
-            var user = db.Users.FirstOrDefault(u => u.Id == id);
+            var user = await db.Users.FindAsync(id);
 
             if (user is null)
             {
@@ -30,26 +32,27 @@ namespace CadastroProdutos.Services
             }
 
             db.Users.Remove(user);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
 
             return true;
         }
 
-        public List<UserResponseDto> GetAll()
+        public async Task<List<UserResponseDto>> GetAll()
         {
-            return db.Users
-                .Select(u => new UserResponseDto
+            return await db.Users
+                .Select(user => new UserResponseDto
                 {
-                    Id = u.Id,
-                    Username = u.Username,
-                    Role = u.Role.ToString()
+                    Id = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Role = user.Role.ToString()
                 })
-                .ToList();
+                .ToListAsync();
         }
 
-        public UserResponseDto GetById(int id)
+        public async Task<UserResponseDto> GetById(int id)
         {
-            var user = db.Users.FirstOrDefault(u => u.Id == id);
+            var user = await db.Users.FindAsync(id);
 
             if (user == null)
                 return null;
@@ -58,13 +61,14 @@ namespace CadastroProdutos.Services
             {
                 Id = user.Id,
                 Username = user.Username,
+                Email = user.Email,
                 Role = user.Role.ToString()
             };
         }
 
-        public User GetByUsername(string username)
+        public async Task<User> GetByEmail(string email)
         {
-            var user = db.Users.FirstOrDefault(u => u.Username == username);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user is null)
             {
@@ -74,9 +78,9 @@ namespace CadastroProdutos.Services
             return user;
         }
 
-        public UserResponseDto Update(int id, UpdateUserDto updatedUser)
+        public async Task<UserResponseDto> Update(int id, UpdateUserDto updatedUser)
         {
-            var user = db.Users.FirstOrDefault(p => p.Id == id);
+            var user = await db.Users.FindAsync(id);
 
             if (user is null)
             {
@@ -85,12 +89,14 @@ namespace CadastroProdutos.Services
 
             user.Username = updatedUser.Username;
 
-            db.SaveChanges();
+            db.Users.Update(user);
+            await db.SaveChangesAsync();
 
             return new UserResponseDto
             {
                 Id = user.Id,
                 Username = user.Username,
+                Email = user.Email,
                 Role = user.Role.ToString()
             };
         }
